@@ -27,14 +27,16 @@ func NewMemoryLocker(d time.Duration) ILocker {
 	}
 	locks := &sync.Map{}
 	go func() {
-		select {
-		case <-time.After(d):
-			locks.Range(func(key, value interface{}) bool {
-				if value.(*meta).releasedAt.Before(time.Now()) {
-					locks.Delete(key)
-				}
-				return true
-			})
+		for {
+			select {
+			case <-time.After(d):
+				locks.Range(func(key, value interface{}) bool {
+					if value.(*meta).releasedAt.Before(time.Now()) {
+						locks.Delete(key)
+					}
+					return true
+				})
+			}
 		}
 	}()
 	return &MemoryLocker{locks: locks}

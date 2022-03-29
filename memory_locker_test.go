@@ -66,4 +66,10 @@ func TestMemoryLocker_Clean(t *testing.T) {
 	time.Sleep(time.Second * 2)
 	_, ok = _l.locks.Load("clean")
 	assert.False(t, ok, "locks.Load() should return false")
+
+	// Clean another one
+	l.Lock(ctx, "clean", time.Second)
+	time.Sleep(time.Second * 2)
+	_, ok = _l.locks.Load("clean")
+	assert.False(t, ok, "locks.Load() should return false")
 }
