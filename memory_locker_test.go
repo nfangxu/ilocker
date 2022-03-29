@@ -23,6 +23,21 @@ func TestMemoryLocker_Lock(t *testing.T) {
 	err = ld2.UnLock(ctx)
 	assert.NoErrorf(t, err, "UnLock() should not return error")
 	assert.False(t, ld2.Locking(ctx), "Locking() should return false")
+
+	ld3, err := l.Lock(ctx, "baz", time.Second)
+	assert.NoErrorf(t, err, "Lock() should not return error")
+	assert.True(t, ld3.Locking(ctx), "Locking() should return true")
+	_, err = l.Lock(ctx, "baz", time.Second)
+	assert.Error(t, err, "Lock() should return error")
+	time.Sleep(time.Second * 2)
+	now := time.Now()
+	_, err = l.Lock(ctx, "baz", time.Second)
+	assert.NoErrorf(t, err, "Lock() should not return error")
+	_l := l.(*MemoryLocker)
+	_m, ok := _l.locks.Load("baz")
+	assert.True(t, ok, "locks should contain key baz")
+	m := _m.(*meta)
+	assert.True(t, m.releasedAt.After(now), "releasedAt should be after now")
 }
 
 func TestMemoryLocker_Lock_Async(t *testing.T) {

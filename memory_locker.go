@@ -43,10 +43,18 @@ func NewMemoryLocker(d time.Duration) ILocker {
 }
 
 func (m *MemoryLocker) Lock(ctx context.Context, id string, ttl time.Duration) (ILocked, error) {
-	if m.Locking(ctx, id) {
+	now := time.Now()
+	_m, ok := m.locks.LoadOrStore(id, &meta{id: id, releasedAt: now.Add(ttl)})
+	// If the key is not loaded, it is new, and we can lock it.
+	if !ok {
+		return Locked(m, id)
+	}
+	// If the key is loaded, and it is not expired, we cannot lock it.
+	if _m.(*meta).releasedAt.After(now) {
 		return nil, ErrHasLocked
 	}
-	m.locks.Store(id, &meta{id: id, releasedAt: time.Now().Add(ttl)})
+	// If the key is loaded, and it is expired, we can lock it. And we need to update the releasedAt.
+	_m.(*meta).releasedAt = now.Add(ttl)
 	return Locked(m, id)
 }
 
