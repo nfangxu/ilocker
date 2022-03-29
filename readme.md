@@ -1,5 +1,7 @@
 ### Golang locker interface
 
+- Use the built-in memory locker
+
 ```go
 package main
 
